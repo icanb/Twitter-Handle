@@ -1,0 +1,23 @@
+h1 {
+	padding: 30px;
+}
+.pane {
+
+	position: absolute;
+	top:150px;
+	width:500px;
+	left:50%;
+	margin-left:-250px;
+	text-align:center;
+}
+
+.logo {
+	height:300px;
+	width:100%;
+
+	background-image:url("../img/logo.png");
+	background-size:auto 100%;
+	background-repeat:no-repeat;
+	background-position:center;
+
+}

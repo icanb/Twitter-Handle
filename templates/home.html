@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+<head>
+		<title>Paradyme</title>
+	
+		<script type="text/javascript" src="js/jquery.js"></script>
+		<script type="text/javascript" src="js/hover.js"></script>
+		<script type="text/javascript" src="js/bootstrap-dropdown.js"></script>
+		<script type="text/javascript" src="js/bootstrap-tab.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+		<link rel="stylesheet" type="text/css" href="css/main.css">
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+		<script src="http://twitter.github.com/hogan.js/builds/2.0.0/hogan-2.0.0.js"></script>
+</head>
+<body>
+
+<div class="container">
+<div class="row" style="margin-top:100px;">
+
+<div class="leftmenu span3">
+	<ul id="documents_list">
+		<h2>Documents</h2>
+		{% for document in documents %}
+		  
+		  <li id="{{ document.key() }}" {% if loop.first %}class="selected"{% endif %} > {{ document.name }} <a href="document?id={{ document.key() }}"> (Go to doc >>) </a></li>
+		{% else %}
+		  <a href="#" id="no_document"><li> No Documents yet...</li></a>
+		{% endfor %}
+	</ul>
+	<ul>
+		<li><input id="document_name" type="text" placeholder="New document...">
+		<button id="document_submit" type="submit" class="btn">Create</button></li>	
+	</ul>
+</div>
+
+<div class="types span3">
+	<ul id="types_list">
+		<h2>Selection Criteria</h2>
+		{% for type in types %}
+		   <li id="{{type.key()}}" data-type="{{type.document.key()}}" {% if loop.first %}class="selected"{% endif %}> {{ type.name }} </li>
+		{% else %}
+		   <a href="#" id="no_type"><li> No Types yet...</li></a>
+		{% endfor %}
+	</ul>
+	<ul>
+		<li><input id="type_name" type="text" placeholder="New type...">
+		<button data-doc="{{ current_document_id }}" id="type_submit" type="submit" class="btn">Add</button></li>	
+	</ul>
+</div>
+
+<div class="clauses span6">
+	<ul>
+		<h2>Clauses</h2>
+		<ul id="clauses_list">
+		{% for clause in clauses %}
+		  <li> {{ clause.name }} <br><textarea onblur="focusoutClause(event);" class="input-xlarge" id="{{ clause.key() }}" rows="3">{{ clause.content }}</textarea></li>
+		{% else %}
+		   <a href="#" id="no_clause"><li>No Clauses yet...</li></a>
+		{% endfor %}
+		<li>
+		</ul>
+		<ul>
+			<li><input id="clause_name" type="text" placeholder="New clause...">
+			<button data-type="{{ current_type_id }}" id="clause_submit" type="submit" class="btn">Add</button><br></li>	
+		</ul>
+	</ul>
+</div>
+
+</div>
+</div>
+
+<div class="toolbar">
+	<a href="{{ logout_url }}">{{ name }} (Log Out)</a>
+</div>
+<script>
+
+	//Globals
+	var document_button = document.getElementById('document_submit');
+	var type_button = document.getElementById('type_submit');
+	var clause_button = document.getElementById('clause_submit');
+
+	var current_doc;
+	var current_type;
+	
+	var documents_list = document.getElementById('documents_list');
+	var doc_items = documents_list.getElementsByTagName('li');
+	
+	var types_list = document.getElementById('types_list');
+	var type_items = types_list.getElementsByTagName('li');
+	
+	var clauses_list = document.getElementById('clauses_list');
+	var clauses_items = documents_list.getElementsByTagName('li');
+	
+
+	for(var ii=0; ii<doc_items.length; ii++) {
+
+		if(doc_items.item(ii).getAttribute('class') == "selected") {
+			current_doc = doc_items.item(ii);
+		}
+		doc_items.item(ii).addEventListener('click', function(ev){ clickDocument(ev)});
+	}
+
+	for(var ii=0; ii<type_items.length; ii++) {
+
+		if(type_items.item(ii).getAttribute('class') == "selected") {
+			current_type = type_items.item(ii);
+		}
+		type_items.item(ii).addEventListener('click', function(ev){ clickType(ev)});
+	}
+
+
+
+    //DOCUMENT
+
+    function clickDocument(ev) {
+
+    	console.log('getting');
+    	current_doc.setAttribute('class', '');
+ 		origEl = ev.target || ev.srcElement;
+ 		origEl.setAttribute('class', 'selected');
+ 		current_doc = origEl;
+
+ 		$.get('get_type?doc_key=' + origEl.id, function(data) {
+		   console.log(data);
+		   var inside = '<h2>Types</h2>';
+		   if(data.length === 0) {
+		     inside += '<a href="#" id="no_type"><li> No Types yet...</li></a>';
+		   }
+
+		   for(var i=0; i<data.length; ++i) {
+		   	 inside += '\n<li onclick="clickType(event)" id="'+ data[i].id +'">' + data[i].name + '</li> \n';
+		   }
+		   types_list.innerHTML = inside;
+
+		   clauses_list.innerHTML = '<a href="#" id="no_clause"><li> No Clauses yet...</li></a>';
+		});
+
+ 		type_button.setAttribute('data-doc', origEl.id)
+
+		//if(document.getElementById('no_document'))
+		//	document.getElementById('no_document').parentNode.removeChild(document.getElementById('no_document'));
+ 		//get_type
+    }
+
+	document_button.addEventListener('click', function(){
+	    var inp = document.getElementById('document_name');
+	    var name_doc = inp.value;
+	    
+		$.ajax({
+		  url: "add_document",
+		  data: "name=" + name_doc ,
+		  type: "POST",
+		  complete: function(data, testStatus, jqXHR) {
+			var msg = data.responseText;
+		  if(current_doc)
+	    	current_doc.setAttribute('class','');
+
+		  type_button.setAttribute('data-doc', msg)
+		  var a =  document.createElement('a');
+		  a.appendChild(document.createTextNode('(Go to doc >>)'));
+ 		  a.setAttribute('href',"document?id="+msg);
+ 		  var li = document.createElement('li');
+ 		  li.appendChild(document.createTextNode(name_doc));
+ 		  li.appendChild(a);
+          documents_list.appendChild(li);
+          li.setAttribute('class','selected');
+          li.addEventListener('click', function(ev){ clickDocument(ev)});
+          li.id = msg;
+          current_doc = li;
+		  }
+	    })
+	
+
+		var inside = '<h2>Types</h2>';
+        inside += '<a href="#" id="no_type"><li> No Types yet...</li></a>';
+		types_list.innerHTML = inside;
+        
+        //document.getElementById('documents_list').innerHTML += '<a href="#"><li>'+ name_doc +'</li></a>';
+        inp.value = '';
+	});
+
+	//TYPES
+	function clickType(ev) {
+		if(current_type)
+    		current_type.setAttribute('class', '');
+
+ 		origEl = ev.target || ev.srcElement;
+ 		origEl.setAttribute('class', 'selected');
+
+ 		$.get('get_clause?type_key=' + origEl.id, function(data) {
+
+		   var inside = '';
+		   if(data.length === 0) {
+		     inside += '<a href="#" id="no_clause"><li> No Clauses yet...</li></a>';
+		   }
+		   for(var i=0; i<data.length; ++i) {
+		   	 inside += '\n<li>'+ data[i].name +'<br><textarea onblur="focusoutClause(event);" class="input-xlarge" id="'+data[i].id+'" rows="3">'+data[i].content +'</textarea></li>\n';
+		   }
+		   clauses_list.innerHTML = inside;
+		});
+
+ 		current_type = origEl;
+ 		clause_button.setAttribute('data-type', origEl.id)
+    }
+
+	type_button.addEventListener('click', function(){
+	    var inp = document.getElementById('type_name');
+	    var name_type = inp.value;
+	    var doc_id = type_button.getAttribute('data-doc');
+
+		$.ajax({
+		  type: "POST",
+		  url: "add_type",
+		  data: "name="+ name_type + "&document_id=" + doc_id,
+		  complete: function(data) {
+
+		    clause_button.setAttribute('data-type', data.responseText);
+
+		    if(document.getElementById('no_type'))
+			  document.getElementById('no_type').parentNode.removeChild(document.getElementById('no_type'));
+
+		    var li = document.createElement('li');
+ 		    li.appendChild(document.createTextNode(name_type));
+ 		    li.id = data.responseText;
+		    types_list.appendChild(li);
+		    if(current_type)
+		      current_type.setAttribute('class','');
+		    current_type = li;
+            li.setAttribute('class','selected');
+            li.addEventListener('click', function(ev){ clickType(ev)});
+		  }
+		});
+
+		
+       		
+		 clauses_list.innerHTML = '<a href="#" id="no_clause"><li> No Clauses yet...</li></a>';
+         inp.value = '';
+	});
+	
+	//CLAUSES
+	function focusoutClause(ev) {
+
+		origEl = ev.target || ev.srcElement;
+ 		origEl.setAttribute('class', 'selected');
+ 		
+		$.ajax({
+		  type: "POST",
+		  url: "save_clause",
+		  data: "id="+ origEl.id +"&content=" + origEl.value
+		}).done(function(data) {
+		  
+		});
+	}
+
+	clause_button.addEventListener('click', function(){
+		var inp = document.getElementById('clause_name');
+	    var name_clause = inp.value;
+	    var type_id = clause_button.getAttribute('data-type');
+
+	    
+	    $.get("add_clause?name="+ name_clause + "&type_id=" + type_id, function(data) {
+		  console.log(data);
+		  clause_button.setAttribute('data-type', data);
+		  clauses_list.innerHTML += '<li>'+ name_clause +'<br><textarea onblur="focusoutClause(event);" class="input-xlarge" id="'+ data +'" rows="3"></textarea></li>';
+		});
+
+		if(document.getElementById('no_clause'))
+			document.getElementById('no_clause').parentNode.removeChild(document.getElementById('no_clause'));
+
+	    
+	    console.log('heyyo');
+	    inp.value = '';
+	    
+	});
+
+
+</script>
+
+</body>
+</html>

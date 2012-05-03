@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Bust a Handle</title>
+	
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/ajaxhack.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js"></script>
+
+	<link href="http://fonts.googleapis.com/css?family=Arvo" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"/>
+	<link rel="stylesheet" type="text/css" href="css/main.css">
+
+
+		<!--<link rel="stylesheet" type="text/css" href="css/btn.css">
+		<link rel="stylesheet" type="text/css" href="css/modal.css">-->
+		
+</head>
+<body>
+	<div class="rounded">
+		<div class="logo"></div>
+		<input id="keyword" placeholder="Start typing in keywords..."></input>
+		<div class="tags"></div>
+		<ul class="usernames">
+		</ul>
+	   </div>
+	</div>
+</body>
+<script>
+
+		var keywords = new Array();
+
+		function addKeywords(kword)
+		{
+			$(".usernames").append("<li id='"+kword+"'>"+kword+"</li>");
+			
+			$.ajax({
+			    url: 'https://twitter.com/users/username_available?scribeContext%5Bcomponent%5D=form&scribeContext%5Belement%5D=screen_name&username='+kword+'&value=549',
+			    type: 'GET',
+			    success: function(res) {
+			    	console.log(res);
+			    }
+			});	
+
+			for(var i=0; i<keywords.length; i++)
+			{
+				$(".usernames").append("<li id='"+keywords[i] + kword+"'>"+keywords[i] + kword+"</li>");
+				$(".usernames").append("<li id='"+ kword + keywords[i] + "'>" + kword +keywords[i] +"</li>");
+			}
+
+			keywords.push(kword);
+		}
+
+    $("#keyword").keypress(function(event) {
+    	if ( event.which == 13 ) {
+    		if(keywords.length<13) {
+    		    var elem = $("<div class='tag'>"+$("#keyword").val()+"</div>").hide();
+		   		$(".tags").append(elem);
+		    	elem.show('normal');
+		    	addKeywords($("#keyword").val());
+		    	$("#keyword").val("");
+    		}
+    		else {
+    			$("#keyword").effect("shake", { times:2 }, 200);
+    		}
+		}
+	});
+</script>
+
+</html>
